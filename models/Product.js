@@ -20,7 +20,7 @@ function ProductDatabase(){
     ];
     // Returns an array of products
     this.getProducts=({productID,onlyAvailableProducts})=>{ 
-        if(productID==undefined)
+        if(productID==undefined) 
         {
             if(onlyAvailableProducts){
                 return products.filter(product => product.inventory_count > 0);
@@ -42,10 +42,21 @@ function ProductDatabase(){
             }
         }else{
             throw new Error("No product with such a product id "+productID);
-        }
-        
-
+        } 
     }
+    this.decreaseInventoryCount=function(productIDCountMap){
+        for(let productID in productIDCountMap)
+        {
+            let numberOfSoldIntentory=productIDCountMap[productID];
+            for(let product of products){
+                if(product.productID==productID){
+                    product.inventory_count-=numberOfSoldIntentory;
+                    break;
+                }
+            }
+        }
+    }
+
 }
 
 let products=new ProductDatabase();

@@ -1,19 +1,19 @@
-var express = require('express');
-var express_graphql = require('express-graphql');
-var { buildSchema } = require('graphql');
-var bodyParser =require("body-parser");
-var session =require("express-session");
-var productsDatabase=require("./models/Product");
-var Cart=require("./models/Cart");
+const express = require('express');
+const express_graphql = require('express-graphql');
+const { buildSchema } = require('graphql');
+const bodyParser =require("body-parser");
+const session =require("express-session");
+const productsDatabase=require("./models/Product");
+const Cart=require("./models/Cart");
 //{products:cart.generateArray(),totalPrice:cart.totalPrice}
 var schema = buildSchema(`
     type Query {
-        getProducts(productID:Int,onlyAvailableProducts:Boolean): [Product],
-        
+        getProducts(productID:Int,onlyAvailableProducts:Boolean): [Product]
+        viewCart: Cart
     },
     type Mutation {
         addToCart(productID:Int!): String
-        checkOut: Cart
+        completeCart: Cart
     },
     type Product {
         productID: Int  
@@ -21,41 +21,52 @@ var schema = buildSchema(`
         price: Float
         inventory_count: Int
     },
-    
+    type ProductView {
+        productID:Int
+        title: String
+        qty:Int
+        price:String
+    },
     type Cart{
-        Products:[Product]
+        Products:[ProductView]
         totalQty:Int
         totalPrice:Float
     }
 `);
 
-var addToCart = function({productID},{ req }) {
+let addToCart = function({productID},{ req }) {
     try{
         var product=productsDatabase.getProduct(productID);
     }catch(err)
     {
         return err.message;
     }
-    var cart= new Cart(req.session.cart ? req.session.cart:{});
+    let cart= new Cart(req.session.cart ? req.session.cart:{});
     cart.add(product,product.productID);
     req.session.cart=cart;
     console.log(req.session.cart)
     return `Product with ${product.productID} successfull added to cart`;
 }
 
-var viewCart=function({ req }){
-    var cart=new Cart(req.session.cart);
+let viewCart=function(_,{ req }){
+    var cart=new Cart(req.session.cart ? req.session.cart:{});
     return cart.generateCartView();
     
 }
+let completeCart=function(_,{ req }){
+    var cart=new Cart(req.session.cart ? req.session.cart:{});
+    return cart.generateCartView();
+}
 
-var root = {
+
+let root = {
     getProducts:productsDatabase.getProducts,
     addToCart,
-    viewCart
+    viewCart,
+    completeCart
 };
 // Create an express server and a GraphQL endpoint
-var app = express();
+let app = express();
 const SESSION_SECRET = "secret";
 app.use(
     session({
