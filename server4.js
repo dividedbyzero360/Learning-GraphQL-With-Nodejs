@@ -42,8 +42,13 @@ let addToCart = function({productID},{ req }) {
         return err.message;
     }
     let cart= new Cart(req.session.cart ? req.session.cart:{});
-    cart.add(product,product.productID);
-    req.session.cart=cart;
+    try{
+        cart.add(product,product.productID);
+        req.session.cart=cart;
+    }
+    catch(err){
+      return err.message;
+    }
     console.log(req.session.cart)
     return `Product with ${product.productID} successfull added to cart`;
 }

@@ -1,3 +1,4 @@
+// Write logic here to stop a user from overloading his cart with the same product
 module.exports=function Cart(oldCart){
     this.products=oldCart.products || {};
     this.totalQty=oldCart.totalQty || 0;
@@ -7,6 +8,10 @@ module.exports=function Cart(oldCart){
         if(!storedItem){
             storedItem=this.products[productID]={item:item,qty:0,price:0};
     
+        }
+        if(storedItem.qty==item.inventory_count){
+            throw new Error(`Sorry you cannot add more products with product id ${productID} as you have reached the maximum limit available at the moment`);
+             
         }
         storedItem.qty++;
         storedItem.price=storedItem.item.price*storedItem.qty;
