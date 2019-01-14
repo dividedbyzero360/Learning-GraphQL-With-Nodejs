@@ -17,6 +17,7 @@ module.exports=function Cart(oldCart){
         storedItem.price=storedItem.item.price*storedItem.qty;
         this.totalQty++;
         this.totalPrice+=storedItem.item.price;
+        this.newItemAdded=true;
     }
     this.generateCartView=function(){
         var arr=[];
@@ -29,11 +30,11 @@ module.exports=function Cart(oldCart){
             product.price=storedItem.price;
             arr.push(product);
         }
-        var myCart={};
-        myCart.Products=arr;
-        myCart.totalQty=this.totalQty;
-        myCart.totalPrice=this.totalPrice;
-        return myCart;
+        var cartView={};
+        cartView.Products=arr;
+        cartView.totalQty=this.totalQty;
+        cartView.totalPrice=this.totalPrice;
+        return cartView;
     }
 
 }

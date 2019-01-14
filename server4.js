@@ -5,6 +5,7 @@ const bodyParser =require("body-parser");
 const session =require("express-session");
 const productsDatabase=require("./models/Product");
 const Cart=require("./models/Cart");
+const util=require("./Util/Util");
 //{products:cart.generateArray(),totalPrice:cart.totalPrice}
 var schema = buildSchema(`
     type Query {
@@ -49,7 +50,7 @@ let addToCart = function({productID},{ req }) {
     catch(err){
       return err.message;
     }
-    console.log(req.session.cart)
+    // console.log(req.session.cart)
     return `Product with ${product.productID} successfull added to cart`;
 }
 
@@ -60,12 +61,21 @@ let viewCart=function(_,{ req }){
 }
 let completeCart=function(_,{ req }){
     var cart=new Cart(req.session.cart ? req.session.cart:{});
+    req.session.cart = null;
     return cart.generateCartView();
+}
+
+let getProducts=function({productID,onlyAvailableProducts},{ req }){
+   let products=productsDatabase.getProducts({productID,onlyAvailableProducts});
+   if(req.session.cart!=undefined && req.session.cart.newItemAdded){
+   return util.changeInventoryCountForTheUser(products,req.session.cart);
+   }
+   return products;
 }
 
 
 let root = {
-    getProducts:productsDatabase.getProducts,
+    getProducts,
     addToCart,
     viewCart,
     completeCart
@@ -87,7 +97,6 @@ app.use(
     })
   );
 app.use('/graphql',bodyParser.json(),(req, _, next) => {
-    console.log(req.session.cart);
     return next();
   }, express_graphql(req=>({
     schema: schema,

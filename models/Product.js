@@ -18,6 +18,9 @@ function ProductDatabase(){
             inventory_count:0
         }
     ];
+
+
+
     // Returns an array of products
     this.getProducts=({productID,onlyAvailableProducts})=>{ 
         if(productID==undefined) 
@@ -26,12 +29,16 @@ function ProductDatabase(){
                 return products.filter(product => product.inventory_count > 0);
             }
             else{
-                return products;
+                return products.filter(product=>true);
             }
         }else{
             return products.filter(product => product.productID == productID);
         }
     }
+
+    //This method is only used when the user wants to add a product to his cart
+    //It is different from {this.getProducts} in that it throws an error if there 
+    //no inventory of the product that the user wants to add to his cart at the moment
     this.getProduct=function(productID){
         var products=this.getProducts({productID});
         if(products[0]){
