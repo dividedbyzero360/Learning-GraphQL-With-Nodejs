@@ -38,12 +38,13 @@ function ProductDatabase(){
 
     //This method is only used when the user wants to add a product to his cart
     //It is different from {this.getProducts} in that it throws an error if there 
-    //no inventory of the product that the user wants to add to his cart at the moment
+    //no inventory of the product that the user wants to add to his cart at the moment.
+    //This method is called for Server.js "addToCart" method.
     this.getProduct=function(productID){
         var products=this.getProducts({productID});
         if(products[0]){
             if(products[0].inventory_count==0){
-                throw new Error(`Product with product id ${productID} is not left in the stock`);
+                throw new Error(`Product with product id ${productID} is out of stock`);
             }else{
                 return products[0];
             }
