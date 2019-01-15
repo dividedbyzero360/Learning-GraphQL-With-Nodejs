@@ -3,25 +3,35 @@ function ProductDatabase(){
     var products=[
         {   productID:1,
             title:"Mobile",
-            price:5.0,
+            price:555.0,
             inventory_count:10
         },
         {   productID:2,
             title:"TV",
-            price:11.0,
+            price:120.0,
             inventory_count:15
         },
         {
             productID:3,
-            title:"Headphones",
-            price:15,
+            title:"Headphone",
+            price:35,
             inventory_count:0
+        },
+        {
+            productID:4,
+            title:"Laptop",
+            price:15,
+            inventory_count:3
         }
     ];
 
 
 
-    // Returns an array of products
+    //This method takes two optional parameters 
+    //1. productID ->In case the user wants the detail of a single product.
+    // However if the user sends the productID, then onlyAvailableProducts has no effect.
+    //2. onlyAvailableProducts->When it is set to true, only products in stock are shown to the user
+    //3. If no parameter is sent all products whether in stock or not are sent.
     this.getProducts=({productID,onlyAvailableProducts})=>{ 
         if(productID==undefined) 
         {
@@ -29,44 +39,36 @@ function ProductDatabase(){
                 return products.filter(product => product.inventory_count > 0);
             }
             else{
-                return products.filter(product=>true);
+                return products;
             }
         }else{
             return products.filter(product => product.productID == productID);
         }
     }
 
-    //This method is only used when the user wants to add a product to his cart
-    //It is different from {this.getProducts} in that it throws an error if there 
-    //no inventory of the product that the user wants to add to his cart at the moment.
-    //This method is called for Server.js "addToCart" method.
-    this.getProduct=function(productID){
-        var products=this.getProducts({productID});
-        if(products[0]){
-            if(products[0].inventory_count==0){
-                throw new Error(`Product with product id ${productID} is out of stock`);
-            }else{
-                return products[0];
+    
+
+    //Decreases the inventory count of the products present in the database.
+    //It is called when a user completes his cart.   
+    this.decreaseInventoryCountOfProducts=function(cart){
+        // if(!util.verifyCart(products,cart)){
+        //     throw new Error(`One or more product are not available any more.
+        //                     Please view the cart to see the changes or checkout to purchase the reamining products`);
+        // }
+        var productKeys=Object.keys(cart["products"]);
+        for(var product of products ){
+            if(productKeys.includes(product["productID"].toString()))
+            {
+                product["inventory_count"]-=cart["products"][product["productID"]].qty;   
             }
-        }else{
-            throw new Error("No product with such a product id "+productID);
-        } 
-    }
-    this.decreaseInventoryCount=function(productIDCountMap){
-        for(let productID in productIDCountMap)
-        {
-            let numberOfSoldIntentory=productIDCountMap[productID];
-            for(let product of products){
-                if(product.productID==productID){
-                    product.inventory_count-=numberOfSoldIntentory;
-                    break;
-                }
-            }
+            
         }
     }
-
 }
 
 let products=new ProductDatabase();
 module.exports=products;
+
+
+
 

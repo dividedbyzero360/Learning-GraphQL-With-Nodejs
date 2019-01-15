@@ -4,13 +4,22 @@ module.exports=function Cart(oldCart){
     this.totalQty=oldCart.totalQty || 0;
     this.totalPrice=oldCart.totalPrice || 0;
     this.add=function(item,productID){
+        if(!item){
+            throw new Error("No such product with the product id "+productID);
+        }
+        // if(item.inventory_count==0){
+        //     throw new Error(`Sorry product ${productID} is out of stock`);
+        // }
         var storedItem=this.products[productID];
         if(!storedItem){
             storedItem=this.products[productID]={item:item,qty:0,price:0};
     
         }
         if(storedItem.qty==item.inventory_count){
-            throw new Error(`Sorry you cannot add more products with product id ${productID} as you have reached the maximum limit available at the moment`);
+            if(item.inventory_count==0){
+                delete this.products[productID]; 
+            }
+            throw new Error(`Sorry product ${productID} is out of stock`);
              
         }
         storedItem.qty++;
@@ -38,3 +47,22 @@ module.exports=function Cart(oldCart){
     }
 
 }
+
+//Working code
+
+// this.add=function(item,productID){
+//     var storedItem=this.products[productID];
+//     if(!storedItem){
+//         storedItem=this.products[productID]={item:item,qty:0,price:0};
+
+//     }
+//     if(storedItem.qty==item.inventory_count){
+//         throw new Error(`Sorry you cannot add more products with product id ${productID} as you have reached the maximum limit available at the moment`);
+         
+//     }
+//     storedItem.qty++;
+//     storedItem.price=storedItem.item.price*storedItem.qty;
+//     this.totalQty++;
+//     this.totalPrice+=storedItem.item.price;
+//     this.newItemAdded=true;
+// }
