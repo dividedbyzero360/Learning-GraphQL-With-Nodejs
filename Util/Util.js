@@ -1,5 +1,6 @@
 const productsDatabase=require("../models/Product");
 
+
 //This method changes the inventory count of the products that are in the user's cart.
 //it does not change the inventory count in the real database
 // For example->Let there be 10 phones at the beginning. 
@@ -7,6 +8,12 @@ const productsDatabase=require("../models/Product");
 // User A will see that now there are 9 phones available.
 //However another User B who has not put any phone in his cart
 //will see 10 phones until user A completes his cart.
+
+//Please note that the call to this method is commented,
+//initially did it this way, but now decided not to show the user
+//the inventory_count and instead use "in_stock" flag, as this
+//method is unneccessarily slow as it involves copying the 
+//whole Products table.  
 let changeInventoryCountForTheUser=function(productsArray, cart){
     let newProductsArray=[];
     // The below code is written to create a copy of the database.
@@ -20,18 +27,15 @@ let changeInventoryCountForTheUser=function(productsArray, cart){
         if(productKeys.includes(newProductsArray[i]["productID"].toString()))
         {
             newProductsArray[i]["inventory_count"]-=cart["products"][newProductsArray[i]["productID"]].qty;
-            if(newProductsArray[i]["inventory_count"]<0){
+            if(newProductsArray[i]["inventory_count"]<=0){
                 
                 newProductsArray[i]["inventory_count"]=0;
+                newProductsArray[i]["in_stock"]=false;
             }
+            
         }
     }
-    //newItemAdded flag is to ensure that this method only runs when a user has added a new item,
-    //before viewing the products.
-    //To view products the user calls the "getProducts" query which in turn
-    //call or does not call this method based on this flag.
-    //This flag is set to true in Cart.js "add" method.
-    cart.newItemAdded=false;
+    
     return newProductsArray;
 }
 
@@ -52,9 +56,9 @@ let verifyCart=function(cart){
                 delete cart["products"][product["productID"]];
                 isCartOk=false;
             }
-            // If the user has more number of a product then the available stock
+            // If the user has more number of a product than the available stock
             // then remove the extra of the product from the cart and decrease 
-            //the totalPrice and totalQty of the cart. 
+            // the totalPrice and totalQty of the cart. 
             let diff=cart["products"][product["productID"]].qty-product["inventory_count"];
             if(diff > 0){
                 cart["products"][product["productID"]].qty-=diff;
@@ -77,3 +81,5 @@ let util={changeInventoryCountForTheUser,verifyCart};
 
 module.exports=util;
 
+
+    

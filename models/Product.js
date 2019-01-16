@@ -4,24 +4,28 @@ function ProductDatabase(){
         {   productID:1,
             title:"Mobile",
             price:555.0,
-            inventory_count:10
+            inventory_count:10,
+            in_stock:true
         },
         {   productID:2,
             title:"TV",
             price:120.0,
-            inventory_count:15
+            inventory_count:15,
+            in_stock:true
         },
         {
             productID:3,
             title:"Headphone",
             price:35,
-            inventory_count:0
+            inventory_count:0,
+            in_stock:false
         },
         {
             productID:4,
             title:"Laptop",
             price:15,
-            inventory_count:3
+            inventory_count:3,
+            in_stock:true
         }
     ];
 
@@ -56,6 +60,9 @@ function ProductDatabase(){
             if(productKeys.includes(product["productID"].toString()))
             {
                 product["inventory_count"]-=cart["products"][product["productID"]].qty;   
+                if(product["inventory_count"]==0){
+                    product["in_stock"]=false;
+                }
             }
             
         }

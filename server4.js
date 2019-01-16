@@ -6,10 +6,11 @@ const session = require("express-session");
 const productsDatabase = require("./models/Product");
 const Cart = require("./models/Cart");
 const util = require("./Util/Util");
+require("./playground")
 var schema = buildSchema(`
     type Query {
         getProducts(productID:Int,onlyAvailableProducts:Boolean): [Product]
-        viewCart: Cart
+        viewCart: UserCart
     },
     type Mutation {
         addToCart(productID:Int!): Info
@@ -20,15 +21,17 @@ var schema = buildSchema(`
         title: String
         price: Float
         #inventory_count: Int
+        in_stock: Boolean
+
     },
-    type ProductView {
+    type ProductInCart {
         productID:Int
         title: String
         qty:Int
-        price:Int
+        price:Float
     },
-    type Cart{
-        Products:[ProductView]
+    type UserCart{
+        Products:[ProductInCart]
         totalQty:Int
         totalPrice:Float
     },
@@ -41,17 +44,19 @@ var schema = buildSchema(`
 
 
 /**
- * Adds an available product (inventory_count > 0) to the cart.
- * @param {Object} productID The product id of the product the user wants to add to the cart. Example {productID:1}  
+ *Adds an available product (inventory_count > 0) to the cart. If an user attempts to add an out of stock product,
+ *tries to add a product more than what is available or if the product id is invalid,  he/she gets an error message
+ *else a succees message.
+ * @param {Object} data An object containing the product id of the product the user wants to add to the cart. Example {productID:1}
+ * @param {Number} data.productID   The product id of the product the user wants to add to the cart.
  * @param {Object} req The request object, sent internally by express. Use to track user session 
- * @returns {Object} Returns Object of type {isSuccess:Boolean,message:String}
- * 
+ * @returns {Info}  Returns an Object of type {isSuccess:Boolean,message:String}
  */
 let addToCart = function ({ productID }, { req }) {
     var product = productsDatabase.getProducts({ productID })[0];
     let cart = new Cart(req.session.cart ? req.session.cart : {});
     try {
-        //Add product to the cart.
+        //Adds product to the cart.
         //Throws error if either the product is out of stock
         //or product id is invalid.
         cart.add(product, productID);
@@ -66,9 +71,17 @@ let addToCart = function ({ productID }, { req }) {
 }
 
 
-
+/**
+ * Returns an object containing  products list in the user's cart, along with total price and total quantity.
+ * Each item in the products list contains information about the product and the count of that product in the cart and
+ * also the cummalative total of the product. This method will remove products from the cart if not available.       
+ *   
+ * @param {*} _  Empty object that gets sent with graphql requests. Ignored in this case
+ * @param {Object} req The request object, sent internally by express. Use to track user session  
+ * @returns {UserCart} UserCart
+ */
 let viewCart = function (_, { req }) {
-    //If user has atleast one product in his cart.
+    //If a user has atleast one product in his cart.
     if(req.session.cart){
         try{
             //Make neccessary changes to the cart according to the availability of the products.
@@ -78,18 +91,22 @@ let viewCart = function (_, { req }) {
         }
     }
     let cart = new Cart(req.session.cart ? req.session.cart : {});
-    console.log("----------------------------");
-    console.log(cart);
-    console.log("----------------------------");
     return cart.generateCartView();
 }
-
+/**
+ * Either charges the user the total amount and decreases the inventory_count of the products  
+ * or notifies the user of any changes in the product(s) stock in the cart.
+ * This method, like viewCart, will remove products from the cart if not available. 
+ * @param {*} _ Empty object that gets sent with graphql requests. Ignored in this case
+ * @param {Object} req The request object, sent internally by express. Use to track user session
+ * @returns {Info} Info
+ */
 let completeCart = function (_, { req }) {
     if (req.session.cart) {
         try {
             // Verfies whether the cart is same as the user expected
             // i.e. checks if any product got out of stock, or is present in the cart in more quantity
-            //then what is available in the stock. Throws error if that is the case.
+            //than what is available in the stock. Throws error if that is the case.
             // Changes the user cart to represent the exact status,i.e. removes product(s) from the cart
             // that are out of stock or decrease the products according to what is available. 
             util.verifyCart(req.session.cart);
@@ -98,11 +115,11 @@ let completeCart = function (_, { req }) {
             //then what is available in the stock. It lets the user know before billing him/her.
             return { isSuccess: false, message: err.message }
         }
-        //Decrease the product(s) inventory_count that that is/are present in the users cart.
-        //It impacts the real database.
+        //Decrease the inventory_count of the products present in the user's cart.
         productsDatabase.decreaseInventoryCountOfProducts(req.session.cart);
         let tempCart=req.session.cart;
-        //Successfully checkouts. User's cart is not tracked any more now. Until he put products in his cart again. 
+        //Successfully checkouts. User's cart is not tracked any more now. 
+        //Until she/he put products in his cart again. 
         req.session.cart = null;
         return { isSuccess: true, message: `You are billed $${tempCart.totalPrice}. Thank you for shopping with us.` };
     }
@@ -112,11 +129,20 @@ let completeCart = function (_, { req }) {
     }
 }
 
+
 let getProducts = function ({ productID, onlyAvailableProducts }, { req }) {
     let products = productsDatabase.getProducts({ productID, onlyAvailableProducts });
-    if (req.session.cart != undefined) {
-        return util.changeInventoryCountForTheUser(products, req.session.cart);
-    }
+
+    // Uncomment the below code if you want to see different inventory_count per user.
+    // Working code, commented it as it is unneccessarily expensive.
+    // To give user the idea of whether a product is available or not
+    // decided to use the boolean flag "in_stock" instead. 
+
+  //*******************************************************//  
+    // if (req.session.cart != undefined) {
+    //     return util.changeInventoryCountForTheUser(products, req.session.cart);
+    // }
+  //********************************************************//
     return products;
 }
 
