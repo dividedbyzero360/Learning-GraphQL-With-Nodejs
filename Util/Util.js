@@ -9,16 +9,19 @@ const productsDatabase=require("../models/Product");
 //will see 10 phones until user A completes his cart.
 let changeInventoryCountForTheUser=function(productsArray, cart){
     let newProductsArray=[];
+    // The below code is written to create a copy of the database.
+    // Since the database is in memory, change for displaying
+    // to the user would impact all users. So had to create a copy of it. 
     for(let product of productsArray){
         newProductsArray.push(JSON.parse(JSON.stringify(product)));
     }
-    console.log(newProductsArray);
     var productKeys=Object.keys(cart["products"]);
     for(let i=0; i< newProductsArray.length;i++){
         if(productKeys.includes(newProductsArray[i]["productID"].toString()))
         {
             newProductsArray[i]["inventory_count"]-=cart["products"][newProductsArray[i]["productID"]].qty;
             if(newProductsArray[i]["inventory_count"]<0){
+                
                 newProductsArray[i]["inventory_count"]=0;
             }
         }
@@ -64,7 +67,7 @@ let verifyCart=function(cart){
     }
      if(!isCartOk){
         throw new Error(`One or more product are not available any more.
-                     Please view the cart to see the changes or checkout to purchase the reamining products`);
+                     Please view the cart to see the changes or checkout to purchase the remaining products`);
      }
 }
 
@@ -74,11 +77,3 @@ let util={changeInventoryCountForTheUser,verifyCart};
 
 module.exports=util;
 
-
-
-//if some products in a users cart got out of stock then let the user know
-            //before the checkout 
-            // if(isCartChanged){
-            //     throw new Error(`A product with product id ${outOfStockProductID} got out of stock.
-            //     Please call viewCart to see and the changes or checkout to confirm order of the remaining products`);
-            //  }

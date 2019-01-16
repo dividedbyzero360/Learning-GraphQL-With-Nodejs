@@ -19,7 +19,7 @@ var schema = buildSchema(`
         productID: Int  
         title: String
         price: Float
-        inventory_count: Int
+        #inventory_count: Int
     },
     type ProductView {
         productID:Int
@@ -59,8 +59,8 @@ let addToCart = function ({ productID }, { req }) {
     catch (err) {
         return { isSuccess: false, message: err.message }
     }
-    //The first time a user successfuly enters a product to his cart
-    //a session is created for that user to keep track of his cart
+    //The first time a user successfully enters a product to his cart
+    //a session is created for that user to keep track of his cart.
     req.session.cart = cart;
     return { isSuccess: true, message: `Product with product id ${product.productID} successfully added to cart` };
 }
@@ -68,26 +68,43 @@ let addToCart = function ({ productID }, { req }) {
 
 
 let viewCart = function (_, { req }) {
-    var cart = new Cart(req.session.cart ? req.session.cart : {});
-    return cart.generateCartView();
+    //If user has atleast one product in his cart.
+    if(req.session.cart){
+        try{
+            //Make neccessary changes to the cart according to the availability of the products.
+            util.verifyCart(req.session.cart);
+        }catch(err){
 
+        }
+    }
+    let cart = new Cart(req.session.cart ? req.session.cart : {});
+    console.log("----------------------------");
+    console.log(cart);
+    console.log("----------------------------");
+    return cart.generateCartView();
 }
+
 let completeCart = function (_, { req }) {
     if (req.session.cart) {
-        var cart = new Cart(req.session.cart);
         try {
-            util.verifyCart(cart)
+            // Verfies whether the cart is same as the user expected
+            // i.e. checks if any product got out of stock, or is present in the cart in more quantity
+            //then what is available in the stock. Throws error if that is the case.
+            // Changes the user cart to represent the exact status,i.e. removes product(s) from the cart
+            // that are out of stock or decrease the products according to what is available. 
+            util.verifyCart(req.session.cart);
         } catch (err) {
-            // One or more product in the cart is either out of stock or is present in more quantity
-            //then what is available in the stock.
+            // One or more product in the cart is either out of stock or is present in the cart in more quantity
+            //then what is available in the stock. It lets the user know before billing him/her.
             return { isSuccess: false, message: err.message }
         }
         //Decrease the product(s) inventory_count that that is/are present in the users cart.
+        //It impacts the real database.
         productsDatabase.decreaseInventoryCountOfProducts(req.session.cart);
-
-        //Successfully checkouts. User's cart is not tracked any more now. Until he puts product in his cart again. 
+        let tempCart=req.session.cart;
+        //Successfully checkouts. User's cart is not tracked any more now. Until he put products in his cart again. 
         req.session.cart = null;
-        return { isSuccess: true, message: `You are billed $${cart.totalPrice}. Thank you for shopping with us.` };
+        return { isSuccess: true, message: `You are billed $${tempCart.totalPrice}. Thank you for shopping with us.` };
     }
     // When a user has no product in his cart.
     else {

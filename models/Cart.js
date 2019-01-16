@@ -7,17 +7,14 @@ module.exports=function Cart(oldCart){
         if(!item){
             throw new Error("No such product with the product id "+productID);
         }
-        // if(item.inventory_count==0){
-        //     throw new Error(`Sorry product ${productID} is out of stock`);
-        // }
         var storedItem=this.products[productID];
         if(!storedItem){
             storedItem=this.products[productID]={item:item,qty:0,price:0};
-    
         }
         if(storedItem.qty==item.inventory_count){
             if(item.inventory_count==0){
                 delete this.products[productID]; 
+                throw new Error(`Sorry product ${productID} is out of stock`);
             }
             throw new Error(`Sorry product ${productID} is out of stock`);
              

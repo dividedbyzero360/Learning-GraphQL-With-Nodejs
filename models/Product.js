@@ -51,10 +51,6 @@ function ProductDatabase(){
     //Decreases the inventory count of the products present in the database.
     //It is called when a user completes his cart.   
     this.decreaseInventoryCountOfProducts=function(cart){
-        // if(!util.verifyCart(products,cart)){
-        //     throw new Error(`One or more product are not available any more.
-        //                     Please view the cart to see the changes or checkout to purchase the reamining products`);
-        // }
         var productKeys=Object.keys(cart["products"]);
         for(var product of products ){
             if(productKeys.includes(product["productID"].toString()))
