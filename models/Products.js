@@ -31,11 +31,18 @@ function ProductDatabase(){
 
 
 
-    //This method takes two optional parameters 
-    //1. productID ->In case the user wants the detail of a single product.
-    // However if the user sends the productID, then onlyAvailableProducts has no effect.
-    //2. onlyAvailableProducts->When it is set to true, only products in stock are shown to the user
-    //3. If no parameter is sent all products whether in stock or not are sent.
+    
+    /**
+     * The method takes an Object with two optional properties.
+     * 1. productID ->In case when the user wants the detail of a single product. When "productID" is present
+     * "onlyAvailableProducts" has no effect.
+     * 2. onlyAvailableProducts->In case when the user want the details of only products currently in stock.
+     * 3. If no property is set all products whether in stock or not are sent.
+     * @param {Object} data  Object with optional properties of type {productID: Number, onlyAvailableProducts: Boolean}
+     * @param {Number} data.productID Optional productID
+     * @param {Boolean} data.onlyAvailableProducts  Optional onlyAvailableProducts
+     * @returns {[Product]} Returns an array of Product
+     */
     this.getProducts=({productID,onlyAvailableProducts})=>{ 
         if(productID==undefined) 
         {
@@ -49,11 +56,13 @@ function ProductDatabase(){
             return products.filter(product => product.productID == productID);
         }
     }
-
-    
-
-    //Decreases the inventory count of the products present in the database.
-    //It is called when a user completes his cart.   
+   
+    /**
+     * Decreases the inventory_count of the products in the database 
+     * for the products present in the user cart. It is called when
+     * a user can successfully complete his/her cart.s 
+     * @param {UserCart} cart The UserCart object
+     */
     this.decreaseInventoryCountOfProducts=function(cart){
         var productKeys=Object.keys(cart["products"]);
         for(var product of products ){

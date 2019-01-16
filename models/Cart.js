@@ -27,19 +27,23 @@ module.exports=function Cart(oldCart){
         this.newItemAdded=true;
     }
     this.generateCartView=function(){
-        var arr=[];
+        var productsList=[];
         for(var productID in this.products){
             var storedItem=this.products[productID];
             var product={};
             product.productID=storedItem.item.productID;
             product.title=storedItem.item.title;
+            //Same product quantity
             product.qty=storedItem.qty;
+            //Same product total price
             product.price=storedItem.price;
-            arr.push(product);
+            productsList.push(product);
         }
         var cartView={};
         cartView.Products=arr;
+        //Overall product quantity
         cartView.totalQty=this.totalQty;
+        //Overall product total price
         cartView.totalPrice=this.totalPrice;
         return cartView;
     }

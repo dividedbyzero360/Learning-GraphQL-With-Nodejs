@@ -1,4 +1,4 @@
-const productsDatabase=require("../models/Product");
+const productsDatabase=require("../models/Products");
 
 
 //This method changes the inventory count of the products that are in the user's cart.
@@ -39,6 +39,16 @@ let changeInventoryCountForTheUser=function(productsArray, cart){
     return newProductsArray;
 }
 
+
+/**
+ * Verifies whether the cart is same as the user expected 
+ * i.e. checks if any product got out of stock, or is present in the cart in more quantity
+ * than what is available in the stock at the moment.The method will remove a product completely if it is out of stock 
+ * or remove some quantity of it depending on the inventory_count of the product.
+ * If it modifies the cart in any way it throws an Error at the end to notify the caller methods "completeCart" and 
+ * "viewCart".     
+ * @param {UserCart} cart The UserCart object
+ */
 let verifyCart=function(cart){
     let products=productsDatabase.getProducts({});
     let isCartOk=true;
@@ -51,18 +61,18 @@ let verifyCart=function(cart){
             //and totalQty of the cart.
             if(product["inventory_count"]==0)
             {
-                cart.totalQty-=cart["products"][product["productID"]].qty;
-                cart.totalPrice-=cart["products"][product["productID"]].price;
-                delete cart["products"][product["productID"]];
+                cart.totalQty-=cart["products"][productID].qty;
+                cart.totalPrice-=cart["products"][productID].price;
+                delete cart["products"][productID];
                 isCartOk=false;
             }
             // If the user has more number of a product than the available stock
             // then remove the extra of the product from the cart and decrease 
             // the totalPrice and totalQty of the cart. 
-            let diff=cart["products"][product["productID"]].qty-product["inventory_count"];
+            let diff=cart["products"][productID].qty-product["inventory_count"];
             if(diff > 0){
-                cart["products"][product["productID"]].qty-=diff;
-                cart["products"][product["productID"]].price-=diff*product.price;
+                cart["products"][productID].qty-=diff;
+                cart["products"][productID].price-=diff*product.price;
                 cart.totalQty-=diff;
                 cart.totalPrice-=diff*product.price;
                 isCartOk=false;
@@ -70,8 +80,8 @@ let verifyCart=function(cart){
         }
     }
      if(!isCartOk){
-        throw new Error(`One or more product are not available any more.
-                     Please view the cart to see the changes or checkout to purchase the remaining products`);
+        throw new Error(`One or more product is not available anymore or available in less quantity.
+        Please view the cart to see the change or checkout to purchase the remaining products.`);
      }
 }
 

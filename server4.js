@@ -3,7 +3,7 @@ const express_graphql = require('express-graphql');
 const { buildSchema } = require('graphql');
 const bodyParser = require("body-parser");
 const session = require("express-session");
-const productsDatabase = require("./models/Product");
+const productsDatabase = require("./models/Products");
 const Cart = require("./models/Cart");
 const util = require("./Util/Util");
 require("./playground")
@@ -46,7 +46,7 @@ var schema = buildSchema(`
 /**
  *Adds an available product (inventory_count > 0) to the cart. If an user attempts to add an out of stock product,
  *tries to add a product more than what is available or if the product id is invalid,  he/she gets an error message
- *else a succees message.
+ *else a success message.
  * @param {Object} data An object containing the product id of the product the user wants to add to the cart. Example {productID:1}
  * @param {Number} data.productID   The product id of the product the user wants to add to the cart.
  * @param {Object} req The request object, sent internally by express. Use to track user session 
@@ -72,10 +72,10 @@ let addToCart = function ({ productID }, { req }) {
 
 
 /**
- * Returns an object containing  products list in the user's cart, along with total price and total quantity.
+ * Returns an UserCart object containing products list in the user's cart, along with total price and total quantity.
  * Each item in the products list contains information about the product and the count of that product in the cart and
- * also the cummalative total of the product. This method will remove products from the cart if not available.       
- *   
+ * also the cummalative total of the product. The method will also remove a product completely if it is out of stock 
+ * or remove some quantity of it depending on the inventory_count of the product.       
  * @param {*} _  Empty object that gets sent with graphql requests. Ignored in this case
  * @param {Object} req The request object, sent internally by express. Use to track user session  
  * @returns {UserCart} UserCart
@@ -94,9 +94,10 @@ let viewCart = function (_, { req }) {
     return cart.generateCartView();
 }
 /**
- * Either charges the user the total amount and decreases the inventory_count of the products  
- * or notifies the user of any changes in the product(s) stock in the cart.
- * This method, like viewCart, will remove products from the cart if not available. 
+ * Depending on situation this method does either of the 2 things (When the user has atleast one product in the cart)
+ * 1. Decrease the inventory_count of the products present in the user's cart and charges the user.
+ * 2. Like viewCart, will remove the products from the cart if not available. 
+ * In both the cases it returns the Info Object to notify the user. 
  * @param {*} _ Empty object that gets sent with graphql requests. Ignored in this case
  * @param {Object} req The request object, sent internally by express. Use to track user session
  * @returns {Info} Info
@@ -104,14 +105,10 @@ let viewCart = function (_, { req }) {
 let completeCart = function (_, { req }) {
     if (req.session.cart) {
         try {
-            // Verfies whether the cart is same as the user expected
-            // i.e. checks if any product got out of stock, or is present in the cart in more quantity
-            //than what is available in the stock. Throws error if that is the case.
-            // Changes the user cart to represent the exact status,i.e. removes product(s) from the cart
-            // that are out of stock or decrease the products according to what is available. 
+            //Make neccessary changes to the cart according to the availability of the products.
             util.verifyCart(req.session.cart);
         } catch (err) {
-            // One or more product in the cart is either out of stock or is present in the cart in more quantity
+            //One or more product in the cart is either out of stock or is present in the cart in more quantity
             //then what is available in the stock. It lets the user know before billing him/her.
             return { isSuccess: false, message: err.message }
         }
@@ -132,10 +129,16 @@ let completeCart = function (_, { req }) {
 
 let getProducts = function ({ productID, onlyAvailableProducts }, { req }) {
     let products = productsDatabase.getProducts({ productID, onlyAvailableProducts });
+    return products;
+}
+
+
+let getProducts2 = function ({ productID, onlyAvailableProducts }, { req }) {
+    let products = productsDatabase.getProducts({ productID, onlyAvailableProducts });
 
     // Uncomment the below code if you want to see different inventory_count per user.
     // Working code, commented it as it is unneccessarily expensive.
-    // To give user the idea of whether a product is available or not
+    // To give the user the idea of whether a product is available or not
     // decided to use the boolean flag "in_stock" instead. 
 
   //*******************************************************//  
